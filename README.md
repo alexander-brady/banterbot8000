@@ -5,5 +5,5 @@ Banter Bot 8000 isn't just your usual chatbot. Not only is he extremely funny an
 ## How to use
 1. Create and activate your virtual environment `python -m venv venv`.
 2. Download all dependencies `pip install -r requirements.txt`.
-3. Download your LLM. I utilized Llama 3.2-3B as a GGUF from [here](https://huggingface.co/bartowski/Llama-3.2-3B-Instruct-GGUF). 
+3. I utilized Llama 3.2-3B as a GGUF from [here](https://huggingface.co/bartowski/Llama-3.2-3B-Instruct-GGUF). If you use a diffent LLM, configure it in the `ipynb`.
 4. Run `banterbot8000.ipynb`. Run all the initialization cells, then happy chatting!
