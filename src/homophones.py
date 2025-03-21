@@ -1,7 +1,14 @@
 from nltk.corpus import cmudict, words, wordnet as wn
-import numpy as np
 from itertools import product
+import numpy as np
 
+import nltk
+
+def _download_resources():
+    nltk.download('cmudict')
+    nltk.download('words')
+    nltk.download('wordnet')
+    
 cmu_dict = cmudict.dict()
 word_list = set(words.words())
 
@@ -44,7 +51,7 @@ phoneme_features = {
 }
 
 # Calculates feature distance between two phonemes
-def feature_distance(phoneme1, phoneme2):
+def _feature_distance(phoneme1, phoneme2):
     features1 = phoneme_features.get(phoneme1)
     features2 = phoneme_features.get(phoneme2)
 
@@ -55,7 +62,7 @@ def feature_distance(phoneme1, phoneme2):
     return sum(abs(f1 - f2) for f1, f2 in zip(features1, features2)) / len(features1)
 
 # Weighted edit distance using feature vectors
-def weighted_edit_distance(seq1, seq2):
+def _weighted_edit_distance(seq1, seq2):
     len1, len2 = len(seq1), len(seq2)
     dp = np.zeros((len1 + 1, len2 + 1))
 
@@ -69,14 +76,14 @@ def weighted_edit_distance(seq1, seq2):
             if seq1[i - 1] == seq2[j - 1]:
                 dp[i][j] = dp[i - 1][j - 1]  # No cost if the same
             else:
-                substitution_cost = feature_distance(seq1[i - 1], seq2[j - 1])
+                substitution_cost = _feature_distance(seq1[i - 1], seq2[j - 1])
                 dp[i][j] = min(dp[i - 1][j] + 1,  # Deletion
                                 dp[i][j - 1] + 1,  # Insertion
                                 dp[i - 1][j - 1] + substitution_cost)  # Substitution
 
     return dp[len1][len2]
 
-def get_phonetic_transcription(text):
+def _get_phonetic_transcription(text):
     words = text.lower().split()
     transcription = []
 
@@ -88,9 +95,9 @@ def get_phonetic_transcription(text):
     return transcription
 
 
-def find_similar_sounding_words(target_word, max_distance=2):
+def _find_similar_sounding_words(target_word, max_distance=2):
     similar_words = []
-    target_transcription = get_phonetic_transcription(target_word)
+    target_transcription = _get_phonetic_transcription(target_word)
     
     if not target_transcription:
         return similar_words
@@ -108,7 +115,7 @@ def find_similar_sounding_words(target_word, max_distance=2):
 
         for transcription in transcriptions:
             # Calculate weighted edit distance between target and candidate transcription
-            distance = weighted_edit_distance(target_transcription, transcription)
+            distance = _weighted_edit_distance(target_transcription, transcription)
 
             # If within the acceptable range, add to similar words
             if distance <= max_distance:
@@ -117,14 +124,14 @@ def find_similar_sounding_words(target_word, max_distance=2):
             
     return similar_words
 
-def find_similar_sounding_words_and_phrases(target_text, max_distance=2):
+def _find_similar_sounding_words_and_phrases(target_text, max_distance=2):
     target_words = target_text.lower().split()
     similar_words_list = []
     all_similar_phrases = {}
 
     # Generate similar-sounding words for each word in the target phrase
     for word in target_words:
-        similar_words = find_similar_sounding_words(word, max_distance=max_distance)
+        similar_words = _find_similar_sounding_words(word, max_distance=max_distance)
         
         # Include original word to check for exact matches in combinations
         similar_words.append(word)
@@ -133,20 +140,20 @@ def find_similar_sounding_words_and_phrases(target_text, max_distance=2):
     # Generate possible phrase combinations from similar-sounding words
     for phrase_tuple in product(*similar_words_list):
         phrase = ' '.join(phrase_tuple)
-        phrase_transcription = get_phonetic_transcription(phrase)
+        phrase_transcription = _get_phonetic_transcription(phrase)
 
         if not phrase_transcription:
             continue 
 
         # Calculate distance between target transcription and current phrase transcription
-        target_transcription = get_phonetic_transcription(target_text)
-        distance = weighted_edit_distance(target_transcription, phrase_transcription)
+        target_transcription = _get_phonetic_transcription(target_text)
+        distance = _weighted_edit_distance(target_transcription, phrase_transcription)
         if distance <= max_distance and phrase != target_text.lower():
             all_similar_phrases[phrase] = distance
 
     # Find single words similar to target phrase
     similar_single_words = {}
-    target_transcription = get_phonetic_transcription(target_text)
+    target_transcription = _get_phonetic_transcription(target_text)
     for word, transcriptions in cmu_dict.items():
         word_lower = word.lower()
         if word_lower in target_text.lower():
@@ -158,7 +165,7 @@ def find_similar_sounding_words_and_phrases(target_text, max_distance=2):
         for transcription in transcriptions:
             
             # Calculate distance between target transcription and each dictionary word transcription
-            distance = weighted_edit_distance(target_transcription, transcription)
+            distance = _weighted_edit_distance(target_transcription, transcription)
             
             if distance <= max_distance:
                 similar_single_words[word] = distance
@@ -172,7 +179,8 @@ def find_similar_sounding_words_and_phrases(target_text, max_distance=2):
 
 
 def get_homophones(pun): 
-    similar_words, similar_phrases = find_similar_sounding_words_and_phrases(pun, max_distance=2)
+    '''Returns homophones of a given pun.'''
+    similar_words, similar_phrases = _find_similar_sounding_words_and_phrases(pun, max_distance=2)
  
     similar_words.update(similar_phrases)
  

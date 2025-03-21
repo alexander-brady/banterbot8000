@@ -1,0 +1,34 @@
+llm: 
+  model: Llama-3.2-3B-Instruct-Q6_K_L.gguf
+  n_ctx: 4096
+  echo: True
+
+prompts:
+  default: You are BanterBot 8000. You are goofy and love to tell jokes. You are humorous and concise.
+  pipeline:
+    should_explain_joke: Is the user asking you to explain a joke or pun? Yes or No?
+    extract_pun: |
+      Which words in the user message make up the pun?
+      Example:
+      Q: Please explain this joke: "I used to be a baker, but I couldn't make enough dough."
+      A: The pun word(s) is: dough
+    pun_type: | # LLM must choose between the words "sound like" and "has two meanings"
+      Puns are jokes that play on the multiple meanings of words or the sounds of words that sound alike.
+      Which type of pun is "{{ pun }}"? Is it humorous because it sounds like another word, or because it has multiple meanings?
+
+      Examples:
+      Q: What do you call a fake noodle? An impasta.
+      A: The pun "impasta" sounds like "imposter."
+        
+      Q: I used to be a baker, but I couldn't make enough dough.
+      A: The pun "dough" has two meanings "money" and "baking ingredient."  
+  handle_homograph:
+    system: 'The pun word "{{ pun }}" plays on multiple meanings. Of the following dictionary definitions, which two explain the pun? \n - ' # {definitions}
+    def1: 'The humor plays off of the pun "{{ pun }}" having two distinct meanings in this context. First, the definition "'
+    def2: '. Second, "{{ pun }}" also has the definition: "'
+    output: 'The pun "{{ pun }}" is a homograph. It plays off the two meanings of the word "{{ pun }}": (1) {{ def1 }} and (2) {{ def2 }}.'
+  handle_homophone:
+    system: 'The pun word "{{ pun }}" sounds like multiple word(s). Which of the following makes the pun? \n - ' # {words}
+    homophone: 'The pun "{{ pun }}" is a pun because it sounds like the word(s): "' # select(homophone)
+    output: 'The joke relies on the homophone "{{ pun }}", which sounds like "{{ homophone }}". This '
+  explain_pun: Explain the humor in the joke or pun.
